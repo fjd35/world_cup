@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  Flask Login Example
+</h1>
+<h2 class="subtitle">
+  Easy authentication and authorization in Flask.
+</h2>
+<table>
+    {% for match in matches %}
+        {% if match.is_finished %}
+            <tr>
+                <td>{{ match.team1 }}</td>
+                <td>{{ match.score1 }} - {{ match.score2 }}</td>
+                <td>{{ match.team2 }}</td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+{% endblock %}
