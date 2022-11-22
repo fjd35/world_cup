@@ -23,14 +23,14 @@ def my_predictions():
 @login_required
 def add_prediction():
     data = request.form
-    existing_prediction = db.session.query(Prediction).filter_by(user_id=current_user.id, match_id=data["match_id"]).first()
+    existing_prediction = db.session.query(Prediction).filter_by(user_id=current_user.id, fixture_id=data["fixture_id"]).first()
     if existing_prediction:
         existing_prediction.score1 = data["score1"]
         existing_prediction.score2 = data["score2"]
         print(f"Updating prediction: {existing_prediction}")
         db.session.commit()
     else:
-        new_prediction = Prediction(user_id=current_user.id, match_id=data["match_id"], score1=data["score1"], score2=data["score2"])
+        new_prediction = Prediction(user_id=current_user.id, fixture_id=data["fixture_id"], score1=data["score1"], score2=data["score2"])
         db.session.add(new_prediction)
         db.session.commit()
         print(f"Adding prediction: {new_prediction}")
@@ -41,19 +41,19 @@ def add_prediction():
 def admin():
     if current_user.id != 1:
         abort(403)
-    return render_template("admin.html", matches=db.session.query(Match).order_by(Match.id).all())
+    return render_template("admin.html", fixturees=db.session.query(Fixture).order_by(Fixture.id).all())
 
-@main.route("/update_match", methods=["POST"])
+@main.route("/update_fixture", methods=["POST"])
 @login_required
-def update_match():
+def update_fixture():
     if current_user.id != 1:
         abort(403)
     data = request.form
-    match = db.session.query(Match).get(data["match_id"])
-    print(f"Updating match {match} with data {data}")
-    match.score1 = data["score1"] if data["score1"] != '' else None
-    match.score2 = data["score2"] if data["score2"] != '' else None
-    match.is_finished = "lock" in data
+    fixture = db.session.query(Fixture).get(data["fixture_id"])
+    print(f"Updating fixture {fixture} with data {data}")
+    fixture.score1 = data["score1"] if data["score1"] != '' else None
+    fixture.score2 = data["score2"] if data["score2"] != '' else None
+    fixture.is_finished = "lock" in data
     db.session.commit()
     update_scores()
     return redirect(url_for("main.admin"))
@@ -71,22 +71,22 @@ def forbidden(e):
     return render_template("403.html")
 
 def get_summary_df() -> pd.DataFrame:
-    matches = db.session.query(Match).filter(Match.is_finished == True).order_by(Match.id).all()
+    fixturees = db.session.query(Fixture).filter(Fixture.is_finished == True).order_by(Fixture.id).all()
     users = db.session.query(User).order_by(User.id).all()
     columns = ["Team 1", "Score", "Team 2"] + [user.username for user in users]
     data = []
-    for match in matches:
+    for fixture in fixturees:
         row = [
-            match.team1, 
+            fixture.team1, 
             (
-                match.score1 if match.score1 is not None else "", 
-                match.score2 if match.score2 is not None else ""
+                fixture.score1 if fixture.score1 is not None else "", 
+                fixture.score2 if fixture.score2 is not None else ""
             ), 
-            match.team2
+            fixture.team2
         ]
         for user in users:
             try:
-                prediction = next(filter(lambda p: p.match.id == match.id, user.predictions))
+                prediction = next(filter(lambda p: p.fixture.id == fixture.id, user.predictions))
             except StopIteration:
                 row += [('', '')]
             else:
@@ -96,39 +96,39 @@ def get_summary_df() -> pd.DataFrame:
     return df
 
 def get_predictions_df() -> pd.DataFrame:
-    matches = db.session.query(Match).order_by(Match.id).all()
-    columns = ["matches", "prediction_scores"]
+    fixturees = db.session.query(Fixture).order_by(Fixture.id).all()
+    columns = ["fixturees", "prediction_scores"]
     data = []
-    for match in matches:
+    for fixture in fixturees:
         try:
-            prediction = next(filter(lambda p: p.match.id == match.id, current_user.predictions))
+            prediction = next(filter(lambda p: p.fixture.id == fixture.id, current_user.predictions))
         except StopIteration:
             prediction_score = ('', '')
         else:
             prediction_score = (prediction.score1, prediction.score2)
-        row = [match, prediction_score]
+        row = [fixture, prediction_score]
         data.append(row)
     df = pd.DataFrame(data, columns=columns)
     return df
 
 def update_scores():
     users = db.session.query(User).order_by(User.id).all()
-    matches = db.session.query(Match).order_by(Match.id).all()
+    fixturees = db.session.query(Fixture).order_by(Fixture.id).all()
     user_scores = {user.id: 0 for user in users}
-    for match in matches:
-        if match.score1 is None or match.score2 is None:
+    for fixture in fixturees:
+        if fixture.score1 is None or fixture.score2 is None:
             break
         for user in users:
             try:
-                prediction = next(filter(lambda p: p.match.id == match.id, user.predictions))
+                prediction = next(filter(lambda p: p.fixture.id == fixture.id, user.predictions))
             except StopIteration:
                 continue
             if prediction.score1 is None or prediction.score2 is None:
                 # Shouldn't be possible but worth filtering anyway
                 continue
             predicted_gd = prediction.score1 - prediction.score2
-            actual_gd = match.score1 - match.score2
-            if prediction.score1 == match.score1 and prediction.score2 == match.score2:
+            actual_gd = fixture.score1 - fixture.score2
+            if prediction.score1 == fixture.score1 and prediction.score2 == fixture.score2:
                 # 3 points for a perfectly predicted score
                 user_scores[user.id] += 3
             elif predicted_gd == actual_gd != 0:

@@ -11,14 +11,14 @@
         <th class="text-left">Team 2</th>
     </tr>
     {% for index, row in df.iterrows() %}
-        {% set match = row[0] %}
+        {% set fixture = row[0] %}
         {% set prediction = row[1] %}
         <tr>
-            <td class="text-right">{{ match.team1 }}</td>
+            <td class="text-right">{{ fixture.team1 }}</td>
             <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>
-            <td class="text-left">{{ match.team2 }}</td>
+            <td class="text-left">{{ fixture.team2 }}</td>
             <td style="padding-top: 10px; padding-bottom: 0px">
-            {% if match.is_finished %}
+            {% if fixture.is_finished %}
                 <img src="static/padlock.png" height="20px" style="margin-left: 5px">
             {% else %}
                 <button type="button" class="btn btn-warning text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" data-toggle="modal" data-target="#editModal{{ loop.index }}">
@@ -37,13 +37,13 @@
                   </button>
                 </div>
                 <form action="{{ url_for('main.add_prediction') }}" method="POST">
-                    <input type="hidden" name="match_id" value="{{ match.id }}">
+                    <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
                     <div class="modal-body">
                         <div class="row justify-content-center text-center">
-                            <p class="col-sm">{{ match.team1 }}</p>
+                            <p class="col-sm">{{ fixture.team1 }}</p>
                             <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required>
                             <input name="score2" type="number" min="0" class="form-control" style="width:75px" required>
-                            <p class="col-sm">{{ match.team2 }}</p>
+                            <p class="col-sm">{{ fixture.team2 }}</p>
                         </div>
                     </div>
                     <div class="modal-footer">

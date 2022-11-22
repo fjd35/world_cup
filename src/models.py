@@ -15,8 +15,8 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f"<User {self.id}: {self.username} {self.score}>"
 
-class Match(db.Model):
-    __tablename__ = "match"
+class Fixture(db.Model):
+    __tablename__ = "fixture"
     id = db.Column(db.Integer, primary_key=True)
     team1 = db.Column(db.String(100), nullable=False)
     team2 = db.Column(db.String(100), nullable=False)
@@ -24,22 +24,22 @@ class Match(db.Model):
     score1 = db.Column(db.Integer, nullable=True)
     score2 = db.Column(db.Integer, nullable=True)
 
-    predictions = db.relationship("Prediction", back_populates="match")
+    predictions = db.relationship("Prediction", back_populates="fixture")
 
     def __repr__(self):
-        return f"<Match {self.id}: {self.team1} {self.score1}-{self.score2} {self.team2}>"
+        return f"<Fixture {self.id}: {self.team1} {self.score1}-{self.score2} {self.team2}>"
 
 class Prediction(db.Model):
     __tablename__ = "prediction"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    match_id = db.Column(db.Integer, db.ForeignKey("match.id"), nullable=False)
+    fixture_id = db.Column(db.Integer, db.ForeignKey("fixture.id"), nullable=False)
     score1 = db.Column(db.Integer, nullable=False)
     score2 = db.Column(db.Integer, nullable=False)
 
     user = db.relationship("User", back_populates="predictions")
-    match = db.relationship("Match", back_populates="predictions")
+    fixture = db.relationship("Fixture", back_populates="predictions")
 
     def __repr__(self):
-        return f"<Prediction {self.id}: ({self.user.username}) {self.match.team1} {self.score1}-{self.score2} {self.match.team2}>"
+        return f"<Prediction {self.id}: ({self.user.username}) {self.fixture.team1} {self.score1}-{self.score2} {self.fixture.team2}>"
 
