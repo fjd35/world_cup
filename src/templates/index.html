@@ -8,24 +8,61 @@
     </h1>
 </div>
 <br>
-<table class="table">
-    <tr>
-        <th class="text-right">Team 1</th>
-        <th class="text-center">Score</th>
-        <th class="text-left">Team 2</th>
-        {% for username in df.columns[3:] %}
-            <th class="text-center">{{ username }}</th>
+<div class="container text-center" style="width: 300px">
+    <h2>Rankings</h2>
+    <table class="table">
+        {% for user in users %}
+        {% if loop.index == 1 %}
+            {% set class="points3"%}
+        {% elif loop.index == 2 %}
+            {% set class="points2" %}
+        {% elif loop.index == 3 %}
+            {% set class="points1" %}
+        {% else %}
+            {% set class="" %}
+        {% endif %}
+        <tr class="{{ class }}">
+            <th>{{ user.username }}</th>
+            <td>{{ user.score }}</td>
+        </tr>
         {% endfor %}
-    </tr>
-    {% for index, row in df.iterrows() %}
+    </table>
+</div>
+<br><br>
+<div class="text-center">
+    <h2>Fixtures</h2>
+    <table class="table">
         <tr>
-            <td class="text-right">{{ row[0] }}</td>
-            <td class="text-center">{{ row[1][0] }} - {{ row[1][1] }}</td>
-            <td class="text-left">{{ row[2] }}</td>
+            <th class="text-right">Team 1</th>
+            <th class="text-center">Score</th>
+            <th class="text-left">Team 2</th>
             {% for username in df.columns[3:] %}
-                <td class="text-center">{{ row[username][0] }} - {{ row[username][1] }}</td>
+                <th class="text-center">{{ username }}</th>
             {% endfor %}
         </tr>
-    {% endfor %}
-</table>
+        {% for index, row in df.iterrows() %}
+            <tr>
+                <td class="text-right">{{ row[0] }}</td>
+                <td class="text-center">{{ row[1][0] }} - {{ row[1][1] }}</td>
+                <td class="text-left">{{ row[2] }}</td>
+                {% for username in df.columns[3:] %}
+                    {% if '' in row[username] %}
+                        {% set class="" %}
+                    {% elif '' in row[1] %}
+                        {% set class="" %}
+                    {% elif row[username] == row[1] %}
+                        {% set class="points3" %}
+                    {% elif (row[username][0] - row[username][1]) == (row[1][0] - row[1][1]) %}
+                        {% set class="points2" %}
+                    {% elif (row[username][0] > row[username][1]) == (row[1][0] > row[1][1]) %}
+                        {% set class="points1" %}
+                    {% else %}
+                        {% set class="points0" %}
+                    {% endif %}
+                    <td class="text-center {{ class }}">{{ row[username][0] }} - {{ row[username][1] }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

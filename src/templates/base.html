@@ -14,6 +14,18 @@
             padding-left:20px;
             padding-right:20px
         }
+        .points3 {
+            background-color: #FFD700;
+        }
+        .points2 {
+            background-color: #C0C0C0;
+        }
+        .points1 {
+            background-color: #CD7F32;
+        }
+        .points0 {
+            background-color: rgb(255, 57, 57);
+        }
     </style>
 </head>
 
@@ -30,6 +42,13 @@
                 <li class="nav-item">
                     <a href="{{ url_for('main.my_predictions') }}" class="nav-link">
                         My predictions
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.id == 1 %}
+                <li class="nav-item">
+                    <a href="{{ url_for('main.admin') }}" class="nav-link">
+                        Admin
                     </a>
                 </li>
                 {% endif %}
