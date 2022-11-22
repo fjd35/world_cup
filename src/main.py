@@ -126,13 +126,26 @@ def update_scores():
             if prediction.score1 is None or prediction.score2 is None:
                 # Shouldn't be possible but worth filtering anyway
                 continue
+            predicted_gd = prediction.score1 - prediction.score2
+            actual_gd = match.score1 - match.score2
             if prediction.score1 == match.score1 and prediction.score2 == match.score2:
+                # 3 points for a perfectly predicted score
                 user_scores[user.id] += 3
-            elif prediction.score1 - prediction.score2 == match.score1 - match.score2:
+            elif predicted_gd == actual_gd != 0:
+                # 2 points for guessing goal difference (draw not incl.)
                 user_scores[user.id] += 2
-            elif (prediction.score1 > prediction.score2) == (match.score1 > match.score2):
+            elif sign(predicted_gd) == sign(actual_gd):
+                # 1 point for guessing result
                 user_scores[user.id] += 1
     for user in users:
         user.score = user_scores[user.id]
     db.session.commit()
     print(f"Updated scores: {users}")
+
+def sign(x):
+    if x > 0:
+        return 1
+    if x == 0:
+        return 0
+    if x < 0:
+        return -1

@@ -50,14 +50,18 @@
                         {% set class="" %}
                     {% elif '' in row[1] %}
                         {% set class="" %}
-                    {% elif row[username] == row[1] %}
-                        {% set class="points3" %}
-                    {% elif (row[username][0] - row[username][1]) == (row[1][0] - row[1][1]) %}
-                        {% set class="points2" %}
-                    {% elif (row[username][0] > row[username][1]) == (row[1][0] > row[1][1]) %}
-                        {% set class="points1" %}
                     {% else %}
-                        {% set class="points0" %}
+                        {% set predicted_gd = row[username][0] - row[username][1] %}
+                        {% set actual_gd = row[1][0] - row[1][1] %}
+                        {% if row[username] == row[1] %}
+                            {% set class="points3" %}
+                        {% elif predicted_gd == actual_gd != 0 %}
+                            {% set class="points2" %}
+                        {% elif sign(predicted_gd) == sign(actual_gd) %}
+                            {% set class="points1" %}
+                        {% else %}
+                            {% set class="points0" %}
+                        {% endif %}
                     {% endif %}
                     <td class="text-center {{ class }}">{{ row[username][0] }} - {{ row[username][1] }}</td>
                 {% endfor %}
