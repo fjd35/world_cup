@@ -9,8 +9,9 @@ main = Blueprint("main", __name__)
 
 @main.route("/")
 def index():
+    users = db.session.query(User).order_by(User.score.desc(), User.username).all()
     df = get_summary_df()
-    return render_template("index.html", df=df)
+    return render_template("index.html", users=users, df=df)
 
 @main.route("/my_predictions")
 @login_required
@@ -54,6 +55,15 @@ def update_match():
     match.score2 = data["score2"] if data["score2"] != '' else None
     match.is_finished = "lock" in data
     db.session.commit()
+    update_scores()
+    return redirect(url_for("main.admin"))
+
+@main.route("/update_scores")
+@login_required
+def update_scores_route():
+    if current_user.id != 1:
+        abort(403)
+    update_scores()
     return redirect(url_for("main.admin"))
 
 @main.errorhandler(403)
@@ -100,3 +110,29 @@ def get_predictions_df() -> pd.DataFrame:
         data.append(row)
     df = pd.DataFrame(data, columns=columns)
     return df
+
+def update_scores():
+    users = db.session.query(User).order_by(User.id).all()
+    matches = db.session.query(Match).order_by(Match.id).all()
+    user_scores = {user.id: 0 for user in users}
+    for match in matches:
+        if match.score1 is None or match.score2 is None:
+            break
+        for user in users:
+            try:
+                prediction = next(filter(lambda p: p.match.id == match.id, user.predictions))
+            except StopIteration:
+                continue
+            if prediction.score1 is None or prediction.score2 is None:
+                # Shouldn't be possible but worth filtering anyway
+                continue
+            if prediction.score1 == match.score1 and prediction.score2 == match.score2:
+                user_scores[user.id] += 3
+            elif prediction.score1 - prediction.score2 == match.score1 - match.score2:
+                user_scores[user.id] += 2
+            elif (prediction.score1 > prediction.score2) == (match.score1 > match.score2):
+                user_scores[user.id] += 1
+    for user in users:
+        user.score = user_scores[user.id]
+    db.session.commit()
+    print(f"Updated scores: {users}")
