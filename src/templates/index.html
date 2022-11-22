@@ -23,7 +23,7 @@
             <td class="text-center">{{ row[1][0] }} - {{ row[1][1] }}</td>
             <td class="text-left">{{ row[2] }}</td>
             {% for username in df.columns[3:] %}
-                <td class="text-center">{{ row[username][0] or "" }} - {{ row[username][1] or "" }}</td>
+                <td class="text-center">{{ row[username][0] }} - {{ row[username][1] }}</td>
             {% endfor %}
         </tr>
     {% endfor %}

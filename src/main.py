@@ -1,5 +1,5 @@
 import pandas as pd
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, request
 from flask_login import login_required, current_user
 
 from . import db
@@ -19,10 +19,19 @@ def my_predictions():
     return render_template("my_predictions.html", user=current_user, df=df)
 
 @main.route("/add_prediction", methods=["POST"])
-def add_prediction(match_id: int, score1: int, score2: int):
-    new_prediction = Prediction(user_id=current_user.id, match_id=match_id, score1=score1, score2=score2)
-    db.session.add(new_prediction)
-    db.session.commit()
+def add_prediction():
+    data = request.form
+    existing_prediction = db.session.query(Prediction).filter_by(user_id=current_user.id, match_id=data["match_id"]).first()
+    if existing_prediction:
+        existing_prediction.score1 = data["score1"]
+        existing_prediction.score2 = data["score2"]
+        print(f"Updating prediction: {existing_prediction}")
+        db.session.commit()
+    else:
+        new_prediction = Prediction(user_id=current_user.id, match_id=data["match_id"], score1=data["score1"], score2=data["score2"])
+        db.session.add(new_prediction)
+        db.session.commit()
+        print(f"Adding prediction: {new_prediction}")
     return redirect(url_for("main.my_predictions"))
 
 def get_summary_df() -> pd.DataFrame:
@@ -36,7 +45,7 @@ def get_summary_df() -> pd.DataFrame:
             try:
                 prediction = next(filter(lambda p: p.match.id == match.id, user.predictions))
             except StopIteration:
-                row += [(None, None)]
+                row += [('', '')]
             else:
                 row += [(prediction.score1, prediction.score2)]
         data.append(row)
@@ -45,16 +54,16 @@ def get_summary_df() -> pd.DataFrame:
 
 def get_predictions_df() -> pd.DataFrame:
     matches = db.session.query(Match).order_by(Match.id).all()
-    columns = ["Team 1", "Your prediction", "Team 2", "Editable"]
+    columns = ["matches", "prediction_scores"]
     data = []
     for match in matches:
         try:
             prediction = next(filter(lambda p: p.match.id == match.id, current_user.predictions))
         except StopIteration:
-            prediction_score = (None, None)
+            prediction_score = ('', '')
         else:
             prediction_score = (prediction.score1, prediction.score2)
-        row = [match.team1, prediction_score, match.team2, not bool(match.is_finished)]
+        row = [match, prediction_score]
         data.append(row)
     df = pd.DataFrame(data, columns=columns)
     return df

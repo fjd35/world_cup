@@ -7,7 +7,7 @@ from .models import *
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = "secret-key-goes-here"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../db.sqlite"
 app.secret_key = "secret-key-goes-here"
 
 db.init_app(app)

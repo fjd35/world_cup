@@ -11,17 +11,19 @@
         <th class="text-left">Team 2</th>
     </tr>
     {% for index, row in df.iterrows() %}
+        {% set match = row[0] %}
+        {% set prediction = row[1] %}
         <tr>
-            <td class="text-right">{{ row[0] }}</td>
-            <td class="text-center">{{ row[1][0] or '' }} - {{ row[1][1] or ''}}</td>
-            <td class="text-left">{{ row[2] }}</td>
+            <td class="text-right">{{ match.team1 }}</td>
+            <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>
+            <td class="text-left">{{ match.team2 }}</td>
             <td style="padding-top: 10px; padding-bottom: 0px">
-            {% if row[3] %}
+            {% if match.is_finished %}
+                <img src="static/padlock.png" height="20px" style="margin-left: 5px">
+            {% else %}
                 <button type="button" class="btn btn-warning text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" data-toggle="modal" data-target="#editModal{{ loop.index }}">
                     Edit
                 </button>
-            {% else %}
-                <img src="static/padlock.png" height="20px" style="margin-left: 5px">
             {% endif %}
             </td>
         </tr>
@@ -34,13 +36,14 @@
                     <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
-                <form action="/add_prediction" method="POST">
+                <form action="{{ url_for('main.add_prediction') }}" method="POST">
+                    <input type="hidden" name="match_id" value="{{ match.id }}">
                     <div class="modal-body">
-                        <div class="row justify-content-center">
-                            <h5 class="col-2">{{ row[0] }}</h5>
-                            <input type="number" min="0" class="form-control col-2" style="margin-right:5px">
-                            <input type="number" min="0" class="form-control col-2">
-                            <h5 class="col-2">{{ row[2] }}</h5>
+                        <div class="row justify-content-center text-center">
+                            <p class="col-sm">{{ match.team1 }}</p>
+                            <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required>
+                            <input name="score2" type="number" min="0" class="form-control" style="width:75px" required>
+                            <p class="col-sm">{{ match.team2 }}</p>
                         </div>
                     </div>
                     <div class="modal-footer">
