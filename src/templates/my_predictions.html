@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br>
+<h1 class="text-center">{{ user.username }}'s Predictions</h1>
+
+<table class="table">
+    <tr>
+        <th class="text-right">Team 1</th>
+        <th class="text-center">Your prediction</th>
+        <th class="text-left">Team 2</th>
+    </tr>
+    {% for index, row in df.iterrows() %}
+        <tr>
+            <td class="text-right">{{ row[0] }}</td>
+            <td class="text-center">{{ row[1][0] or '' }} - {{ row[1][1] or ''}}</td>
+            <td class="text-left">{{ row[2] }}</td>
+            <td style="padding-top: 10px; padding-bottom: 0px">
+            {% if row[3] %}
+                <button type="button" class="btn btn-warning text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" data-toggle="modal" data-target="#editModal{{ loop.index }}">
+                    Edit
+                </button>
+            {% else %}
+                <img src="static/padlock.png" height="20px" style="margin-left: 5px">
+            {% endif %}
+            </td>
+        </tr>
+        <div class="modal fade" id="editModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="editModalLabel">Edit Prediction</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <form action="/add_prediction" method="POST">
+                    <div class="modal-body">
+                        <div class="row justify-content-center">
+                            <h5 class="col-2">{{ row[0] }}</h5>
+                            <input type="number" min="0" class="form-control col-2" style="margin-right:5px">
+                            <input type="number" min="0" class="form-control col-2">
+                            <h5 class="col-2">{{ row[2] }}</h5>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
+              </div>
+            </div>
+          </div>
+    {% endfor %}
+</table>
+{% endblock %}

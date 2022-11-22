@@ -1,21 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title">
-  Flask Login Example
-</h1>
-<h2 class="subtitle">
-  Easy authentication and authorization in Flask.
-</h2>
-<table>
-    {% for match in matches %}
-        {% if match.is_finished %}
-            <tr>
-                <td>{{ match.team1 }}</td>
-                <td>{{ match.score1 }} - {{ match.score2 }}</td>
-                <td>{{ match.team2 }}</td>
-            </tr>
-        {% endif %}
+<br>
+<div class="jumbotron">
+    <h1 class="text-center">
+        The Duggan World Cup Predictions Contest
+    </h1>
+</div>
+<br>
+<table class="table">
+    <tr>
+        <th class="text-right">Team 1</th>
+        <th class="text-center">Score</th>
+        <th class="text-left">Team 2</th>
+        {% for username in df.columns[3:] %}
+            <th class="text-center">{{ username }}</th>
+        {% endfor %}
+    </tr>
+    {% for index, row in df.iterrows() %}
+        <tr>
+            <td class="text-right">{{ row[0] }}</td>
+            <td class="text-center">{{ row[1][0] }} - {{ row[1][1] }}</td>
+            <td class="text-left">{{ row[2] }}</td>
+            {% for username in df.columns[3:] %}
+                <td class="text-center">{{ row[username][0] or "" }} - {{ row[username][1] or "" }}</td>
+            {% endfor %}
+        </tr>
     {% endfor %}
 </table>
 {% endblock %}
