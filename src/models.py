@@ -1,6 +1,7 @@
 from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
 
-from .db import db
+db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     __tablename__ = "user"
