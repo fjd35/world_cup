@@ -5,7 +5,17 @@ from flask_login import LoginManager
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = "AnActualSecretKey"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../db.sqlite"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../db.sqlite"
+
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+    username="fergal",
+    password="Hj!bZitag!Nb7si",
+    hostname="fergal.mysql.pythonanywhere-services.com",
+    databasename="fergal$WorldCup",
+)
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
