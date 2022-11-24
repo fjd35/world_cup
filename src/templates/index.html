@@ -48,7 +48,7 @@
             <th class="text-center">Score</th>
             <th class="text-left">Team 2</th>
             {% for username in df.columns[3:] %}
-                <th class="text-center">{{ username }}</th>
+                <th class="text-center" style="min-width:100px">{{ username }}</th>
             {% endfor %}
         </tr>
         {% for index, row in df.iterrows() %}
