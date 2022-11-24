@@ -16,19 +16,26 @@
             {{ scores.append(user.score) or "" }}
         {% endfor %}
         {% for user in users %}
-        {% if scores.index(user.score) == 0 %}
-            {% set class="points3"%}
-        {% elif scores.index(user.score) == 1 %}
-            {% set class="points2" %}
-        {% elif scores.index(user.score) == 2 %}
-            {% set class="points1" %}
-        {% else %}
-            {% set class="" %}
-        {% endif %}
-        <tr class="{{ class }}">
-            <th>{{ user.username }}</th>
-            <td>{{ user.score }}</td>
-        </tr>
+            {% if scores.index(user.score) == 0 %}
+                {% set class="points3" %}
+            {% elif scores.index(user.score) == 1 %}
+                {% set class="points2" %}
+            {% elif scores.index(user.score) == 2 %}
+                {% set class="points1" %}
+            {% else %}
+                {% set class="" %}
+            {% endif %}
+            <tr class="{{ class }}">
+                <td>
+                    {% if class == "points3" %}
+                        <img src="static/gold-medal.png" height="20px" style="margin-left: 5px">
+                    {% elif scores[-1] == user.score %}
+                        <img src="static/poo.png" height="20px" style="margin-left: 5px">
+                    {% endif %}
+                </td>
+                <th>{{ user.username }}</th>
+                <td>{{ user.score }}</td>
+            </tr>
         {% endfor %}
     </table>
 </div>
