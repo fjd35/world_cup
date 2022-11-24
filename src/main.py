@@ -25,9 +25,9 @@ def add_prediction():
     data = request.form
     existing_prediction = db.session.query(Prediction).filter_by(user_id=current_user.id, fixture_id=data["fixture_id"]).first()
     if existing_prediction:
+        print(f"Updating prediction {existing_prediction} with data {data}")
         existing_prediction.score1 = data["score1"]
         existing_prediction.score2 = data["score2"]
-        print(f"Updating prediction: {existing_prediction}")
         db.session.commit()
     else:
         new_prediction = Prediction(user_id=current_user.id, fixture_id=data["fixture_id"], score1=data["score1"], score2=data["score2"])
