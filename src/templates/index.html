@@ -11,12 +11,16 @@
 <div class="container text-center" style="width: 300px">
     <h2>Rankings</h2>
     <table class="table">
+        {% set scores = [] %}
         {% for user in users %}
-        {% if loop.index == 1 %}
+            {{ scores.append(user.score) or "" }}
+        {% endfor %}
+        {% for user in users %}
+        {% if scores.index(user.score) == 0 %}
             {% set class="points3"%}
-        {% elif loop.index == 2 %}
+        {% elif scores.index(user.score) == 1 %}
             {% set class="points2" %}
-        {% elif loop.index == 3 %}
+        {% elif scores.index(user.score) == 2 %}
             {% set class="points1" %}
         {% else %}
             {% set class="" %}
