@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -32,6 +32,7 @@ def login_post():
 
 @auth.route("/signup")
 def signup():
+    abort(403)
     return render_template("signup.html")
 
 @auth.route("/signup", methods=["POST"])
