@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -6,6 +6,7 @@ from .models import User
 from . import db
 
 auth = Blueprint("auth", __name__)
+INVITATION_KEY = "DUGGANWC!"
 
 @auth.route("/login")
 def login():
@@ -32,14 +33,18 @@ def login_post():
 
 @auth.route("/signup")
 def signup():
-    abort(403)
     return render_template("signup.html")
 
 @auth.route("/signup", methods=["POST"])
 def signup_post():
     # code to validate and add user to database goes here
+    key = request.form.get("key")
     username = request.form.get("username")
     password = request.form.get("password")
+
+    if key != INVITATION_KEY:
+        flash("Invitation key incorrect")
+        return redirect(url_for("auth.signup"))
 
     user = User.query.filter_by(username=username).first() # if this returns a user, then the username already exists in database
 
