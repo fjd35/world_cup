@@ -6,6 +6,7 @@ from .models import User
 from . import db
 
 auth = Blueprint("auth", __name__)
+INVITATION_KEY = "DUGGANWC!"
 
 @auth.route("/login")
 def login():
@@ -37,8 +38,13 @@ def signup():
 @auth.route("/signup", methods=["POST"])
 def signup_post():
     # code to validate and add user to database goes here
+    key = request.form.get("key")
     username = request.form.get("username")
     password = request.form.get("password")
+
+    if key != INVITATION_KEY:
+        flash("Invitation key incorrect")
+        return redirect(url_for("auth.signup"))
 
     user = User.query.filter_by(username=username).first() # if this returns a user, then the username already exists in database
 
