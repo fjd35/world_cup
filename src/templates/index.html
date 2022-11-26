@@ -27,7 +27,9 @@
             {% endif %}
             <tr class="{{ class }}">
                 <td>
-                    {% if class == "points3" %}
+                    {% if user.id == 3 %}
+                        <img src="static/octopus.png" height="20px" style="margin-left: 5px">
+                    {% elif class == "points3" %}
                         <img src="static/gold-medal.png" height="20px" style="margin-left: 5px">
                     {% elif scores[-1] == user.score %}
                         <img src="static/poo.png" height="20px" style="margin-left: 5px">
