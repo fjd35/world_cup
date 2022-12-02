@@ -66,6 +66,18 @@ def update_scores_route():
     update_scores()
     return redirect(url_for("main.admin"))
 
+@main.route("/add_fixture", methods=["POST"])
+@login_required
+def add_fixture():
+    if current_user.id != 1:
+        abort(403)
+    data = request.form
+    new_fixture = Fixture(team1=data["team1"], team2=data["team2"])
+    db.session.add(new_fixture)
+    db.session.commit()
+    return redirect(url_for("main.admin"))
+    
+
 @main.errorhandler(403)
 def forbidden(e):
     return render_template("403.html")
