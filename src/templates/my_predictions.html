@@ -11,8 +11,8 @@
         <th class="text-left">Team 2</th>
     </tr>
     {% for index, row in df.iterrows() %}
-        {% set fixture = row[0] %}
-        {% set prediction = row[1] %}
+        {% set fixture = row["fixture"] %}
+        {% set prediction = row["predicted_score"] %}
         <tr>
             <td class="text-right">{{ fixture.team1 }}</td>
             <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>

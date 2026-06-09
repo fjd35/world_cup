@@ -53,18 +53,18 @@
         </tr>
         {% for index, row in df.iterrows() %}
             <tr>
-                <td class="text-right">{{ row[0] }}</td>
-                <td class="text-center">{{ row[1][0] }} - {{ row[1][1] }}</td>
-                <td class="text-left">{{ row[2] }}</td>
+                <td class="text-right">{{ row["Team 1"] }}</td>
+                <td class="text-center">{{ row["Score"][0] }} - {{ row["Score"][1] }}</td>
+                <td class="text-left">{{ row["Team 2"] }}</td>
                 {% for username in df.columns[3:] %}
                     {% if '' in row[username] %}
                         {% set class="" %}
-                    {% elif '' in row[1] %}
+                    {% elif '' in row["Score"] %}
                         {% set class="" %}
                     {% else %}
                         {% set predicted_gd = row[username][0] - row[username][1] %}
-                        {% set actual_gd = row[1][0] - row[1][1] %}
-                        {% if row[username] == row[1] %}
+                        {% set actual_gd = row["Score"][0] - row["Score"][1] %}
+                        {% if row[username] == row["Score"] %}
                             {% set class="points3" %}
                         {% elif predicted_gd == actual_gd != 0 %}
                             {% set class="points2" %}
