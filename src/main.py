@@ -154,7 +154,8 @@ def add_prediction():
         db.session.add(new_prediction)
         db.session.commit()
         print(f"Adding prediction: {new_prediction}")
-    return redirect(url_for("main.my_predictions"))
+    # Redirect back to the user's predictions page and anchor to the edited fixture
+    return redirect(url_for("main.my_predictions") + f"#fixture-{fixture_id}")
 
 @main.route("/admin")
 @login_required

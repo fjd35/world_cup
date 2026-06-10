@@ -18,7 +18,7 @@
             {% set fixture = item.fixture %}
             {% set prediction = item.predicted_score %}
             {% set editable = (not fixture.has_started) and fixture.home_team_name != "" and fixture.away_team_name != "" %}
-            <tr>
+            <tr id="fixture-{{ fixture.id }}">
                 <td class="text-center" data-start-time="{{ fixture.start_at if fixture.start_at else '' }}"></td>
                 <td class="text-right team-cell">
                     {{ fixture.home_team_name }}
@@ -61,8 +61,8 @@
                         <div class="modal-body">
                             <div class="row justify-content-center text-center">
                                 <p class="col-sm">{{ fixture.home_team_name }}</p>
-                                <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required>
-                                <input name="score2" type="number" min="0" class="form-control" style="width:75px" required>
+                                <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required value="{{ prediction[0] }}">
+                                <input name="score2" type="number" min="0" class="form-control" style="width:75px" required value="{{ prediction[1] }}">
                                 <p class="col-sm">{{ fixture.away_team_name }}</p>
                             </div>
                         </div>
