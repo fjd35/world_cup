@@ -45,10 +45,10 @@
                 <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
                 <td class="text-center" data-start-time="{{ fixture.start_at if fixture.start_at else '' }}"></td>
                 <td class="text-right team-cell">
+                    {{ fixture.home_team_name }}
                     {% if fixture.home_team and fixture.home_team.crest_url %}
                         <img src="{{ fixture.home_team.crest_url }}" class="team-crest" alt="{{ fixture.home_team.name }} crest">
                     {% endif %}
-                    {{ fixture.home_team_name }}
                 </td>
                 <td class="text-center">
                     <input name="home_score" type="number" min="0" value="{{ fixture.home_score }}" style="margin-right:5px; width:75px">

@@ -21,10 +21,10 @@
             <tr>
                 <td class="text-center" data-start-time="{{ fixture.start_at if fixture.start_at else '' }}"></td>
                 <td class="text-right team-cell">
+                    {{ fixture.home_team_name }}
                     {% if fixture.home_team and fixture.home_team.crest_url %}
                         <img src="{{ fixture.home_team.crest_url }}" class="team-crest" alt="{{ fixture.home_team.name }} crest">
                     {% endif %}
-                    {{ fixture.home_team_name }}
                 </td>
                 <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>
                 <td class="text-left team-cell">
