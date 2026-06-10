@@ -169,11 +169,12 @@ def admin():
         .order_by(Fixture.start_at, Fixture.id)
         .all()
     )
+    users = db.session.query(User).order_by(User.id).all()
 
     # Group fixtures by stage
     grouped_fixtures = _group_fixtures_by_stage(fixtures)
 
-    return render_template("admin.html", grouped_fixtures=grouped_fixtures)
+    return render_template("admin.html", grouped_fixtures=grouped_fixtures, users=users)
 
 @main.route("/update_fixture", methods=["POST"])
 @login_required
@@ -200,6 +201,26 @@ def update_scores_route():
     if user.id != 1:
         abort(403)
     update_scores()
+    return redirect(url_for("main.admin"))
+
+
+@main.route("/admin/delete_user", methods=["POST"])
+@login_required
+def delete_user():
+    user = _current_user()
+    if user.id != 1:
+        abort(403)
+    user_id = int(request.form["user_id"])
+    if user_id == 1:
+        flash("Cannot delete the admin user.")
+        return redirect(url_for("main.admin"))
+    target_user = db.session.get(User, user_id)
+    if target_user is None:
+        abort(404)
+    db.session.query(Prediction).filter_by(user_id=user_id).delete(synchronize_session=False)
+    db.session.delete(target_user)
+    db.session.commit()
+    flash(f"Deleted user {target_user.username} and all their predictions.")
     return redirect(url_for("main.admin"))
 
 

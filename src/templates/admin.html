@@ -30,6 +30,32 @@
 </form>
 <a class="btn btn-warning" href="/update_scores">Update Scores</a>
 <br><br>
+<h2 class="mt-4">Users</h2>
+<table class="table">
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Score</th>
+        <th>Actions</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.username }}</td>
+        <td>{{ user.score }}</td>
+        <td>
+            {% if user.id != 1 %}
+            <form action="{{ url_for('main.delete_user') }}" method="POST" onsubmit="return confirm('Delete user {{ user.username }} and all their predictions? This cannot be undone.');">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+            {% else %}
+            <span class="text-muted">Admin protected</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 {% for stage, group in grouped_fixtures %}
     <h4 class="mt-4">{{ stage if stage else 'Other' }}</h4>
     <table class="table">
