@@ -6,35 +6,92 @@
   Admin page
 </h1>
 <br>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="alert alert-info">
+    {{ messages[0] }}
+</div>
+{% endif %}
+{% endwith %}
+<form action="{{ url_for('main.import_world_cup_fixtures') }}" method="POST" class="mb-3">
+    <div class="form-row align-items-end">
+        <div class="col-auto">
+            <label for="competition_code">Competition code</label>
+            <input id="competition_code" class="form-control" name="competition_code" value="WC">
+        </div>
+        <div class="col-auto">
+            <label for="season">Season</label>
+            <input id="season" class="form-control" name="season" type="number" value="2026">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Import fixtures from football-data.org</button>
+        </div>
+    </div>
+</form>
 <a class="btn btn-warning" href="/update_scores">Update Scores</a>
 <br><br>
-<table class="table">
-    <tr>
-        <th class="text-right">Team 1</th>
-        <th class="text-center">Score</th>
-        <th class="text-left">Team 2</th>
-        <th class="text-center">Lock</th>
-    </tr>
-    {% for fixture in fixturees %}
-    <tr>
-        <form action="{{ url_for('main.update_fixture') }}" method="POST">
-            <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
-            <td class="text-right">{{ fixture.team1 }}</td>
-            <td class="text-center">
-                <input name="score1" type="number" min="0" value="{{ fixture.score1 }}" style="margin-right:5px; width:75px">
-                <input name="score2" type="number" min="0" value="{{ fixture.score2 }}" style="width:75px">
-            </td>
-            <td class="text-left">{{ fixture.team2 }}</td>
-            <td class="text-center">
-                <input style="height:25px; width:25px;" name="lock" type="checkbox" value="" {{ "checked" if fixture.is_finished }}>
-            </td>
-            <td>
-                <button type="submit" class="btn btn-success text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px">
-                    Save
-                </button>
-            </td>
-        </form>
-    </tr>
-    {% endfor %}
-</table>
+{% for stage, group in grouped_fixtures %}
+    <h4 class="mt-4">{{ stage if stage else 'Other' }}</h4>
+    <table class="table">
+        <tr>
+            <th class="text-center">Start</th>
+            <th class="text-right">Team 1</th>
+            <th class="text-center">Score</th>
+            <th class="text-left">Team 2</th>
+        </tr>
+        {% for fixture in group %}
+        <tr>
+            <form action="{{ url_for('main.update_fixture') }}" method="POST">
+                <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
+                <td class="text-center" data-start-time="{{ fixture.start_at if fixture.start_at else '' }}"></td>
+                <td class="text-right team-cell">
+                    {% if fixture.home_team and fixture.home_team.crest_url %}
+                        <img src="{{ fixture.home_team.crest_url }}" class="team-crest" alt="{{ fixture.home_team.name }} crest">
+                    {% endif %}
+                    {{ fixture.home_team_name }}
+                </td>
+                <td class="text-center">
+                    <input name="home_score" type="number" min="0" value="{{ fixture.home_score }}" style="margin-right:5px; width:75px">
+                    <input name="away_score" type="number" min="0" value="{{ fixture.away_score }}" style="width:75px">
+                </td>
+                <td class="text-left team-cell">
+                    {% if fixture.away_team and fixture.away_team.crest_url %}
+                        <img src="{{ fixture.away_team.crest_url }}" class="team-crest" alt="{{ fixture.away_team.name }} crest">
+                    {% endif %}
+                    {{ fixture.away_team_name }}
+                </td>
+                <td>
+                    <button type="submit" class="btn btn-success text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px">
+                        Save
+                    </button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+    </table>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeCells = document.querySelectorAll('[data-start-time]');
+    timeCells.forEach(cell => {
+        const isoTime = cell.getAttribute('data-start-time');
+        if (isoTime) {
+            const date = new Date(isoTime);
+            // Format as: "DD/MM/YYYY HH:MM (TZ)"
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZoneName: 'short'
+            });
+            cell.textContent = formatter.format(date);
+        }
+    });
+});
+</script>
+
 {% endblock %}

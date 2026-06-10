@@ -4,56 +4,102 @@
 <br>
 <h1 class="text-center">{{ user.username }}'s Predictions</h1>
 
-<table class="table">
-    <tr>
-        <th class="text-right">Team 1</th>
-        <th class="text-center">Your prediction</th>
-        <th class="text-left">Team 2</th>
-    </tr>
-    {% for index, row in df.iterrows() %}
-        {% set fixture = row["fixture"] %}
-        {% set prediction = row["predicted_score"] %}
+{% for stage, fixtures in grouped_fixtures %}
+    <h4 class="mt-4">{{ stage if stage else 'Other' }}</h4>
+    <table class="table">
         <tr>
-            <td class="text-right">{{ fixture.team1 }}</td>
-            <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>
-            <td class="text-left">{{ fixture.team2 }}</td>
-            <td style="padding-top: 10px; padding-bottom: 0px">
-            {% if fixture.is_finished %}
-                <img src="static/padlock.png" height="20px" style="margin-left: 5px">
-            {% else %}
-                <button type="button" class="btn btn-warning text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" data-toggle="modal" data-target="#editModal{{ loop.index }}">
-                    Edit
-                </button>
-            {% endif %}
-            </td>
+            <th class="text-center">Start</th>
+            <th class="text-right">Team 1</th>
+            <th class="text-center">Your prediction</th>
+            <th class="text-left">Team 2</th>
+            <th></th>
         </tr>
-        <div class="modal fade" id="editModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="editModalLabel">Edit Prediction</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </div>
-                <form action="{{ url_for('main.add_prediction') }}" method="POST">
-                    <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
-                    <div class="modal-body">
-                        <div class="row justify-content-center text-center">
-                            <p class="col-sm">{{ fixture.team1 }}</p>
-                            <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required>
-                            <input name="score2" type="number" min="0" class="form-control" style="width:75px" required>
-                            <p class="col-sm">{{ fixture.team2 }}</p>
+        {% for item in fixtures %}
+            {% set fixture = item.fixture %}
+            {% set prediction = item.predicted_score %}
+            {% set editable = (not fixture.has_started) and fixture.home_team_name != "" and fixture.away_team_name != "" %}
+            <tr>
+                <td class="text-center" data-start-time="{{ fixture.start_at if fixture.start_at else '' }}"></td>
+                <td class="text-right team-cell">
+                    {% if fixture.home_team and fixture.home_team.crest_url %}
+                        <img src="{{ fixture.home_team.crest_url }}" class="team-crest" alt="{{ fixture.home_team.name }} crest">
+                    {% endif %}
+                    {{ fixture.home_team_name }}
+                </td>
+                <td class="text-center">{{ prediction[0] }} - {{ prediction[1] }}</td>
+                <td class="text-left team-cell">
+                    {% if fixture.away_team and fixture.away_team.crest_url %}
+                        <img src="{{ fixture.away_team.crest_url }}" class="team-crest" alt="{{ fixture.away_team.name }} crest">
+                    {% endif %}
+                    {{ fixture.away_team_name }}
+                </td>
+                <td style="padding-top: 10px; padding-bottom: 0px">
+                    {% if not editable %}
+                        <button type="button" class="btn btn-secondary text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" disabled title="Cannot edit until both teams are assigned and the match has not started">
+                            Unavailable
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-warning text-center" style="padding-top: 1px; padding-bottom: 1px; padding-left: 4px; padding-right: 4px" data-toggle="modal" data-target="#editModal{{ fixture.id }}" title="Edit your prediction">
+                            Edit
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% if editable %}
+            <div class="modal fade" id="editModal{{ fixture.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ fixture.id }}" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="editModalLabel{{ fixture.id }}">Edit Prediction</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <form action="{{ url_for('main.add_prediction') }}" method="POST">
+                        <input type="hidden" name="fixture_id" value="{{ fixture.id }}">
+                        <div class="modal-body">
+                            <div class="row justify-content-center text-center">
+                                <p class="col-sm">{{ fixture.home_team_name }}</p>
+                                <input name="score1" type="number" min="0" class="form-control" style="margin-right:5px; width:75px" required>
+                                <input name="score2" type="number" min="0" class="form-control" style="width:75px" required>
+                                <p class="col-sm">{{ fixture.away_team_name }}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success">Save changes</button>
-                    </div>
-                </form>
-              </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">Save changes</button>
+                        </div>
+                    </form>
+                  </div>
+                </div>
             </div>
-          </div>
-    {% endfor %}
-</table>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeCells = document.querySelectorAll('[data-start-time]');
+    timeCells.forEach(cell => {
+        const isoTime = cell.getAttribute('data-start-time');
+        if (isoTime) {
+            const date = new Date(isoTime);
+            // Format as: "DD/MM/YYYY HH:MM (TZ)"
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZoneName: 'short'
+            });
+            cell.textContent = formatter.format(date);
+        }
+    });
+});
+</script>
+
 {% endblock %}

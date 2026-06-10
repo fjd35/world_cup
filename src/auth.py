@@ -8,7 +8,7 @@ from .models import User
 from . import db
 
 auth = Blueprint("auth", __name__)
-INVITATION_KEY = "DUGGANWC!"
+INVITATION_KEY = "3lions"
 
 
 def _form_value(name: str) -> str:

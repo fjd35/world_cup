@@ -4,7 +4,7 @@
 <br>
 <div class="jumbotron">
     <h1 class="text-center">
-        The Duggan World Cup Predictions Contest
+        Fergal's World Cup Predictions Contest
     </h1>
 </div>
 <br>
@@ -42,43 +42,44 @@
 <br>
 <div class="text-center">
     <h2>Fixtures</h2>
-    <table class="table">
-        <tr>
-            <th class="text-right">Team 1</th>
-            <th class="text-center">Score</th>
-            <th class="text-left">Team 2</th>
-            {% for username in df.columns[3:] %}
-                <th class="text-center" style="min-width:100px">{{ username }}</th>
-            {% endfor %}
-        </tr>
-        {% for index, row in df.iterrows() %}
+    {% for stage, group in grouped_fixtures %}
+        <h4 class="mt-4">{{ stage if stage else 'Other' }}</h4>
+        <table class="table">
             <tr>
-                <td class="text-right">{{ row["Team 1"] }}</td>
-                <td class="text-center">{{ row["Score"][0] }} - {{ row["Score"][1] }}</td>
-                <td class="text-left">{{ row["Team 2"] }}</td>
-                {% for username in df.columns[3:] %}
-                    {% if '' in row[username] %}
-                        {% set class="" %}
-                    {% elif '' in row["Score"] %}
-                        {% set class="" %}
-                    {% else %}
-                        {% set predicted_gd = row[username][0] - row[username][1] %}
-                        {% set actual_gd = row["Score"][0] - row["Score"][1] %}
-                        {% if row[username] == row["Score"] %}
-                            {% set class="points3" %}
-                        {% elif predicted_gd == actual_gd != 0 %}
-                            {% set class="points2" %}
-                        {% elif sign(predicted_gd) == sign(actual_gd) %}
-                            {% set class="points1" %}
-                        {% else %}
-                            {% set class="points0" %}
-                        {% endif %}
-                    {% endif %}
-                    <td class="text-center {{ class }}">{{ row[username][0] }} - {{ row[username][1] }}</td>
+                <th class="text-right">Team 1</th>
+                <th class="text-center">Score</th>
+                <th class="text-left">Team 2</th>
+                {% for username in df_columns %}
+                    <th class="text-center" style="min-width:100px">{{ username }}</th>
                 {% endfor %}
             </tr>
-        {% endfor %}
-    </table>
+            {% for row in group %}
+                <tr>
+                    {% set fixture = row.fixture %}
+                    {% set home = fixture.home_team %}
+                    {% set away = fixture.away_team %}
+                    <td class="text-right team-cell">
+                        {{ home.tla if home and home.tla else fixture.home_team_name }}
+                        {% if home and home.crest_url %}
+                            <img src="{{ home.crest_url }}" class="team-crest" alt="{{ home.name }} crest">
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ fixture.home_score if fixture.home_score is not none else "" }} - {{ fixture.away_score if fixture.away_score is not none else "" }}</td>
+                    <td class="text-left team-cell">
+                        {% if away and away.crest_url %}
+                            <img src="{{ away.crest_url }}" class="team-crest" alt="{{ away.name }} crest">
+                        {% endif %}
+                        {{ away.tla if away and away.tla else fixture.away_team_name }}
+                    </td>
+                    {% for username in df_columns %}
+                        {% set prediction = row[username] %}
+                        {% set class = score_class(prediction, (fixture.home_score, fixture.away_score)) %}
+                        <td class="text-center {{ class }}">{{ prediction[0] }} - {{ prediction[1] }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
 </div>
 <br><br><br><br>
 {% endblock %}
