@@ -8,7 +8,7 @@ from .models import User
 from . import db
 
 auth = Blueprint("auth", __name__)
-INVITATION_KEY = "3lions"
+INVITATION_KEYS = ["3lions", "wc26"]
 
 
 def _form_value(name: str) -> str:
@@ -44,7 +44,7 @@ def signup_post():
     username = _form_value("username")
     password = _form_value("password")
 
-    if key != INVITATION_KEY:
+    if key not in INVITATION_KEYS:
         flash("Invitation key incorrect")
         return redirect(url_for("auth.signup"))
 
