@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import Any, cast
+from datetime import datetime, timezone
 
-import pandas as pd
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy.orm import selectinload
@@ -80,8 +80,16 @@ def score_points(predicted_score: tuple[int, int], actual_score: tuple[int, int]
     return 0
 
 
-def score_class(predicted_score: Any, actual_score: Any) -> str:
-    if "" in predicted_score or "" in actual_score:
+def score_class(
+        predicted_score: tuple[int, int], 
+        actual_score: tuple[int, int],
+    ) -> str:
+    if (
+        None in predicted_score or 
+        None in actual_score or 
+        "" in predicted_score or
+        "" in actual_score
+    ):
         return ""
     predicted_tuple = (int(predicted_score[0]), int(predicted_score[1]))
     actual_tuple = (int(actual_score[0]), int(actual_score[1]))
@@ -91,20 +99,17 @@ def score_class(predicted_score: Any, actual_score: Any) -> str:
 @main.route("/")
 def index():
     users = db.session.query(User).order_by(User.score.desc(), User.username).all()
-    df = get_summary_df()
+    summary_rows, usernames = get_summary_rows()
     
-    # Convert dataframe rows to list of dicts with fixture and user predictions
-    rows_list = []
-    for index, row in df.iterrows():
-        row_dict = {"fixture": row["fixture"]}
-        for username in df.columns[1:]:
-            row_dict[username] = row[username]
-        rows_list.append(row_dict)
+    grouped_fixtures = _group_fixtures_by_stage(summary_rows)
     
-    # Group by stage
-    grouped_fixtures = _group_fixtures_by_stage(rows_list)
-    
-    return render_template("index.html", users=users, grouped_fixtures=grouped_fixtures, df_columns=df.columns[1:], score_class=score_class)
+    return render_template(
+        "index.html",
+        users=users,
+        grouped_fixtures=grouped_fixtures,
+        df_columns=usernames,
+        score_class=score_class,
+    )
 
 @main.route("/my_predictions")
 @login_required
@@ -251,51 +256,33 @@ def import_world_cup_fixtures():
 def forbidden(_exc: Exception):
     return render_template("403.html")
 
-def get_summary_df() -> pd.DataFrame:
+def get_summary_rows() -> tuple[list[dict[str, Any]], list[str]]:
+    now_utc = datetime.now(timezone.utc).isoformat()
     fixtures = (
         db.session.query(Fixture)
         .options(selectinload(Fixture.home_team), selectinload(Fixture.away_team))
-        .filter(Fixture.home_score.isnot(None), Fixture.away_score.isnot(None))
+        .filter(Fixture.start_at.isnot(None), Fixture.start_at <= now_utc)
         .order_by(Fixture.id)
         .all()
     )
     users = db.session.query(User).order_by(User.id).all()
-    columns = ["fixture"] + [user.username for user in users]
-    data = []
+    usernames = [user.username for user in users]
     prediction_maps = [_predictions_by_fixture(user.predictions) for user in users]
-    for fixture in fixtures:
-        row: list[Any] = [fixture]
-        for prediction_map in prediction_maps:
-            prediction = prediction_map.get(fixture.id)
-            if prediction is None:
-                row.append(("", ""))
-            else:
-                row.append((prediction.score1, prediction.score2))
-        data.append(row)
-    df = pd.DataFrame(data, columns=columns)
-    return df
 
-def get_predictions_df() -> pd.DataFrame:
-    fixtures = (
-        db.session.query(Fixture)
-        .options(selectinload(Fixture.home_team), selectinload(Fixture.away_team))
-        .order_by(Fixture.id)
-        .all()
-    )
-    columns = ["fixture", "predicted_score"]
-    data = []
-    user = _current_user()
-    predictions = _predictions_by_fixture(user.predictions)
+    rows: list[dict[str, Any]] = []
     for fixture in fixtures:
-        prediction = predictions.get(fixture.id)
-        if prediction is None:
-            prediction_score = ("", "")
-        else:
-            prediction_score = (prediction.score1, prediction.score2)
-        row = [fixture, prediction_score]
-        data.append(row)
-    df = pd.DataFrame(data, columns=columns)
-    return df
+        row: dict[str, Any] = {"fixture": fixture}
+        for user, prediction_map in zip(users, prediction_maps):
+            prediction = prediction_map.get(fixture.id)
+            row[user.username] = (
+                (prediction.score1, prediction.score2)
+                if prediction is not None
+                else ("", "")
+            )
+        rows.append(row)
+
+    return rows, usernames
+
 
 def update_scores():
     users = db.session.query(User).order_by(User.id).all()
