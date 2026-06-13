@@ -12,8 +12,7 @@ INVITATION_KEYS = ["3lions", "wc26"]
 
 
 def _form_value(name: str) -> str:
-    value = request.form.get(name)
-    return value if value is not None else ""
+    return request.form.get(name, "")
 
 @auth.route("/login")
 def login():
@@ -44,6 +43,10 @@ def signup_post():
     username = _form_value("username")
     password = _form_value("password")
 
+    if not key or not username or not password:
+        flash("Please fill in all fields")
+        return redirect(url_for("auth.signup"))
+
     if key not in INVITATION_KEYS:
         flash("Invitation key incorrect")
         return redirect(url_for("auth.signup"))
@@ -51,7 +54,7 @@ def signup_post():
     user = User.query.filter_by(username=username).first()
 
     if user is not None:
-        flash("username address already exists")
+        flash("Username already exists")
         return redirect(url_for("auth.signup"))
 
     new_user = User(username=username, password=generate_password_hash(str(password), method="scrypt"))
