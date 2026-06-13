@@ -4,7 +4,8 @@ from typing import Any, cast
 from datetime import datetime, timezone
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, logout_user
+from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import selectinload
 
 from . import db
@@ -161,6 +162,78 @@ def add_prediction():
         print(f"Adding prediction: {new_prediction}")
     # Redirect back to the user's predictions page and anchor to the edited fixture
     return redirect(url_for("main.my_predictions") + f"#fixture-{fixture_id}")
+
+@main.route("/account")
+@login_required
+def account():
+    user = _current_user()
+    return render_template("my_account.html", user=user)
+
+@main.route("/account", methods=["POST"])
+@login_required
+def update_account():
+    user = _current_user()
+    current_password = request.form.get("current_password", "")
+    if not current_password:
+        flash("Current password is required to make changes.")
+        return redirect(url_for("main.account"))
+
+    if not check_password_hash(str(user.password), str(current_password)):
+        flash("Current password is incorrect.")
+        return redirect(url_for("main.account"))
+
+    new_username = request.form.get("username", "").strip()
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not new_username:
+        flash("Username cannot be blank.")
+        return redirect(url_for("main.account"))
+
+    changed = False
+
+    if new_username != user.username:
+        existing = db.session.query(User).filter_by(username=new_username).first()
+        if existing is not None:
+            flash("That username is already taken.")
+            return redirect(url_for("main.account"))
+        user.username = new_username
+        changed = True
+        flash("Username updated.")
+
+    if new_password or confirm_password:
+        if new_password != confirm_password:
+            flash("New password and confirm password do not match.")
+            return redirect(url_for("main.account"))
+        if not new_password:
+            flash("New password cannot be empty.")
+            return redirect(url_for("main.account"))
+        user.password = generate_password_hash(str(new_password), method="scrypt")
+        changed = True
+        flash("Password updated.")
+
+    if not changed:
+        flash("No changes were made.")
+        return redirect(url_for("main.account"))
+
+    db.session.commit()
+    return redirect(url_for("main.account"))
+
+@main.route("/account/delete", methods=["POST"])
+@login_required
+def delete_account():
+    user = _current_user()
+    current_password = request.form.get("current_password", "")
+    if not current_password or not check_password_hash(str(user.password), str(current_password)):
+        flash("Current password is required and must be correct to delete your account.")
+        return redirect(url_for("main.account"))
+
+    db.session.query(Prediction).filter_by(user_id=user.id).delete(synchronize_session=False)
+    logout_user()
+    db.session.delete(user)
+    db.session.commit()
+    flash("Your account and predictions have been deleted.")
+    return redirect(url_for("main.index"))
 
 @main.route("/admin")
 @login_required

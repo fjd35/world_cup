@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <h2>My Account</h2>
+        <p>Manage your username or password, or delete your account.</p>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4 class="card-title">Update account</h4>
+                <form method="POST" action="{{ url_for('main.update_account') }}">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input id="username" name="username" type="text" class="form-control" value="{{ user.username }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">New password</label>
+                        <input id="new_password" name="new_password" type="password" class="form-control" placeholder="Leave blank to keep current password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm new password</label>
+                        <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Confirm new password">
+                    </div>
+                    <div class="form-group">
+                        <label for="current_password">Current password</label>
+                        <input id="current_password" name="current_password" type="password" class="form-control" placeholder="Enter current password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-body">
+                <h4 class="card-title text-danger">Delete account</h4>
+                <p>Deleting your account will remove your user record and all predictions.</p>
+                <form method="POST" action="{{ url_for('main.delete_account') }}" onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+                    <div class="form-group">
+                        <label for="delete_current_password">Current password</label>
+                        <input id="delete_current_password" name="current_password" type="password" class="form-control" placeholder="Enter current password" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Delete my account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
