@@ -18,7 +18,10 @@ class User(UserMixin, db.Model):
     password: Mapped[str] = mapped_column(String(100), nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    predictions: Mapped[list[Prediction]] = cast(Any, relationship(back_populates="user"))
+    predictions: Mapped[list[Prediction]] = cast(
+        Any,
+        relationship(back_populates="user", cascade="all, delete-orphan")
+    )
 
     def __init__(self, username: str, password: str, score: int = 0) -> None:
         self.username = username

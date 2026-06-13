@@ -229,9 +229,9 @@ def delete_account():
         return redirect(url_for("main.account"))
 
     db.session.query(Prediction).filter_by(user_id=user.id).delete(synchronize_session=False)
-    logout_user()
     db.session.delete(user)
     db.session.commit()
+    logout_user()
     flash("Your account and predictions have been deleted.")
     return redirect(url_for("main.index"))
 
@@ -327,7 +327,7 @@ def import_world_cup_fixtures():
 
 @main.errorhandler(403)
 def forbidden(_exc: Exception):
-    return render_template("403.html")
+    return render_template("403.html"), 403
 
 def get_summary_rows() -> tuple[list[dict[str, Any]], list[str]]:
     now_utc = datetime.now(timezone.utc).isoformat()
