@@ -12,17 +12,11 @@ app.config.update(
     FOOTBALL_DATA_TOKEN=os.getenv("FOOTBALL_DATA_TOKEN", "3523264a8ffe4cf89782297f6d5504a6"),
     FOOTBALL_DATA_TOKEN_HEADER=os.getenv("FOOTBALL_DATA_TOKEN_HEADER", "X-Auth-Token"),
     FOOTBALL_DATA_TIMEOUT=float(os.getenv("FOOTBALL_DATA_TIMEOUT", "20")),
+    MATCH_POLLING_ENABLED=os.getenv("MATCH_POLLING_ENABLED", "1") != "0",
+    MATCH_POLL_INTERVAL_SECONDS=int(os.getenv("MATCH_POLL_INTERVAL_SECONDS", "60")),
+    MATCH_POLLING_COMPETITION_CODE=os.getenv("MATCH_POLLING_COMPETITION_CODE", "WC"),
+    MATCH_POLLING_SEASON=int(os.getenv("MATCH_POLLING_SEASON", "2026")),
 )
-
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-#     username="fergal",
-#     password="Hj!bZitag!Nb7si",
-#     hostname="fergal.mysql.pythonanywhere-services.com",
-#     databasename="fergal$WorldCup",
-# )
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 login_manager = LoginManager()
 login_manager.__dict__["login_view"] = "auth.login"

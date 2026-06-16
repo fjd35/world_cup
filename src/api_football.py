@@ -54,6 +54,7 @@ class FixtureSyncResult:
     inserted: int
     updated: int
     fetched: int
+    score_changes: int = 0
 
 
 class FootballDataError(RuntimeError):
@@ -91,44 +92,24 @@ class FootballDataClient:
         payload = self._request(f"/competitions/{competition_code}/matches", {"season": season})
         return [_parse_fixture(item) for item in payload.get("matches", [])]
 
+    def fetch_fixture(self, api_fixture_id: int) -> FootballDataFixtureRecord:
+        payload = self._request(f"/matches/{api_fixture_id}")
+        return _parse_fixture(payload.get("match", payload))
+
 
 def sync_world_cup_fixtures(season: int = 2026, competition_code: str = "WC") -> FixtureSyncResult:
     client = FootballDataClient()
     competition = client.resolve_competition(competition_code)
     records = client.fetch_fixtures(competition.code or competition_code, season)
     imported_ids = {record.api_fixture_id for record in records if record.api_fixture_id is not None}
-    now_utc = datetime.now(timezone.utc)
     inserted = 0
     updated = 0
+    score_changes = 0
     for record in records:
-        home_team = _upsert_team(record.home_team)
-        away_team = _upsert_team(record.away_team)
-        start_at = _parse_utc_datetime(record.start_at)
-        fixture = db.session.query(Fixture).filter_by(api_fixture_id=record.api_fixture_id).first()
-        if fixture is None:
-            fixture = Fixture(
-                home_score=record.home_score,
-                away_score=record.away_score,
-                api_fixture_id=record.api_fixture_id,
-                api_league_id=record.api_league_id,
-                api_season=record.api_season,
-                api_round=record.api_round,
-                start_at=record.start_at,
-                home_team_id=home_team.id if home_team is not None else None,
-                away_team_id=away_team.id if away_team is not None else None,
-            )
-            db.session.add(fixture)
-            inserted += 1
-        else:
-            fixture.home_score = record.home_score
-            fixture.away_score = record.away_score
-            fixture.api_league_id = record.api_league_id
-            fixture.api_season = record.api_season
-            fixture.api_round = record.api_round
-            fixture.start_at = record.start_at
-            fixture.home_team_id = home_team.id if home_team is not None else None
-            fixture.away_team_id = away_team.id if away_team is not None else None
-            updated += 1
+        fixture_result = upsert_fixture_from_record(record)
+        inserted += int(fixture_result[0])
+        updated += int(fixture_result[1])
+        score_changes += int(fixture_result[2])
     if imported_ids:
         orphaned_fixtures = db.session.query(Fixture).filter(
             or_(Fixture.api_fixture_id.is_(None), ~Fixture.api_fixture_id.in_(imported_ids))
@@ -148,6 +129,23 @@ def sync_world_cup_fixtures(season: int = 2026, competition_code: str = "WC") ->
         inserted=inserted,
         updated=updated,
         fetched=len(records),
+        score_changes=score_changes,
+    )
+
+
+def sync_fixture_by_api_id(api_fixture_id: int) -> FixtureSyncResult:
+    client = FootballDataClient()
+    record = client.fetch_fixture(api_fixture_id)
+    inserted, updated, score_changes = upsert_fixture_from_record(record)
+    competition = client.resolve_competition(record.api_round or "WC")
+    return FixtureSyncResult(
+        competition_id=competition.id,
+        competition_name=competition.name,
+        season=record.api_season or 2026,
+        inserted=int(inserted),
+        updated=int(updated),
+        fetched=1,
+        score_changes=int(score_changes),
     )
 
 
@@ -212,6 +210,43 @@ def _upsert_team(team_record: FootballDataTeamRecord) -> Team | None:
     team.api_team_id = team_record.api_team_id
     db.session.flush()
     return team
+
+
+def upsert_fixture_from_record(record: FootballDataFixtureRecord) -> tuple[bool, bool, bool]:
+    home_team = _upsert_team(record.home_team)
+    away_team = _upsert_team(record.away_team)
+    fixture = db.session.query(Fixture).filter_by(api_fixture_id=record.api_fixture_id).first()
+    if fixture is None:
+        fixture = Fixture(
+            home_score=record.home_score,
+            away_score=record.away_score,
+            api_fixture_id=record.api_fixture_id,
+            api_league_id=record.api_league_id,
+            api_season=record.api_season,
+            api_round=record.api_round,
+            start_at=record.start_at,
+            home_team_id=home_team.id if home_team is not None else None,
+            away_team_id=away_team.id if away_team is not None else None,
+        )
+        db.session.add(fixture)
+        return True, False, record.home_score is not None and record.away_score is not None
+
+    previous_home_score = fixture.home_score
+    previous_away_score = fixture.away_score
+    fixture.home_score = record.home_score
+    fixture.away_score = record.away_score
+    fixture.api_league_id = record.api_league_id
+    fixture.api_season = record.api_season
+    fixture.api_round = record.api_round
+    fixture.start_at = record.start_at
+    fixture.home_team_id = home_team.id if home_team is not None else None
+    fixture.away_team_id = away_team.id if away_team is not None else None
+    score_changed = (
+        (previous_home_score != record.home_score or previous_away_score != record.away_score)
+        and record.home_score is not None
+        and record.away_score is not None
+    )
+    return False, True, score_changed
 
 
 def _current_season(current_season: Any) -> int | None:
