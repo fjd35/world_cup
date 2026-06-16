@@ -323,6 +323,7 @@ def import_world_cup_fixtures():
         flash(
             f"Imported {result.inserted} new fixtures and updated {result.updated} existing fixtures for {result.competition_name} {result.season}."
         )
+    update_scores()
     return redirect(url_for("main.admin"))
 
 @main.errorhandler(403)
