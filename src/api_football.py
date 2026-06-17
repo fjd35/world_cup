@@ -32,6 +32,7 @@ class FootballDataFixtureRecord:
     api_season: int | None
     api_round: str | None
     start_at: str | None
+    is_finished: bool | None
     home_team: FootballDataTeamRecord
     away_team: FootballDataTeamRecord
     home_score: int | None
@@ -133,22 +134,6 @@ def sync_world_cup_fixtures(season: int = 2026, competition_code: str = "WC") ->
     )
 
 
-def sync_fixture_by_api_id(api_fixture_id: int) -> FixtureSyncResult:
-    client = FootballDataClient()
-    record = client.fetch_fixture(api_fixture_id)
-    inserted, updated, score_changes = upsert_fixture_from_record(record)
-    competition = client.resolve_competition(record.api_round or "WC")
-    return FixtureSyncResult(
-        competition_id=competition.id,
-        competition_name=competition.name,
-        season=record.api_season or 2026,
-        inserted=int(inserted),
-        updated=int(updated),
-        fetched=1,
-        score_changes=int(score_changes),
-    )
-
-
 def _parse_competition(payload: dict[str, Any]) -> FootballDataCompetition:
     return FootballDataCompetition(
         id=str(payload.get("id")),
@@ -171,6 +156,7 @@ def _parse_fixture(match: dict[str, Any]) -> FootballDataFixtureRecord:
         api_season=_int_or_none(season.get("startDate", "")[:4]) or season.get("id"),
         api_round=_string_or_none(match.get("stage")) or _string_or_none(match.get("group")),
         start_at=_string_or_none(match.get("utcDate")),
+        is_finished=_string_or_none(match.get("status")) == "FINISHED",
         home_team=_parse_team(home_team),
         away_team=_parse_team(away_team),
         home_score=_int_or_none((score.get("fullTime") or {}).get("home")),
@@ -216,10 +202,14 @@ def upsert_fixture_from_record(record: FootballDataFixtureRecord) -> tuple[bool,
     home_team = _upsert_team(record.home_team)
     away_team = _upsert_team(record.away_team)
     fixture = db.session.query(Fixture).filter_by(api_fixture_id=record.api_fixture_id).first()
+    home_score, away_score = None, None
+    if record.is_finished:
+        home_score = record.home_score
+        away_score = record.away_score
     if fixture is None:
         fixture = Fixture(
-            home_score=record.home_score,
-            away_score=record.away_score,
+            home_score=home_score,
+            away_score=away_score,
             api_fixture_id=record.api_fixture_id,
             api_league_id=record.api_league_id,
             api_season=record.api_season,
@@ -233,8 +223,8 @@ def upsert_fixture_from_record(record: FootballDataFixtureRecord) -> tuple[bool,
 
     previous_home_score = fixture.home_score
     previous_away_score = fixture.away_score
-    fixture.home_score = record.home_score
-    fixture.away_score = record.away_score
+    fixture.home_score = home_score
+    fixture.away_score = away_score
     fixture.api_league_id = record.api_league_id
     fixture.api_season = record.api_season
     fixture.api_round = record.api_round
@@ -242,9 +232,9 @@ def upsert_fixture_from_record(record: FootballDataFixtureRecord) -> tuple[bool,
     fixture.home_team_id = home_team.id if home_team is not None else None
     fixture.away_team_id = away_team.id if away_team is not None else None
     score_changed = (
-        (previous_home_score != record.home_score or previous_away_score != record.away_score)
-        and record.home_score is not None
-        and record.away_score is not None
+        (previous_home_score != home_score or previous_away_score != away_score)
+        and home_score is not None
+        and away_score is not None
     )
     return False, True, score_changed
 

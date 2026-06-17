@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from .api_football import FootballDataClient, FootballDataError, upsert_fixture_from_record
 from .models import Fixture, db
-
+from .main import update_scores
 
 MATCH_POLL_DELAY = timedelta(hours=2)
 MATCH_POLL_INTERVAL_SECONDS = 60
@@ -70,13 +70,12 @@ def run_match_poll_cycle(
             record = client.fetch_fixture(fixture.api_fixture_id)
         except FootballDataError:
             raise
-        _, _, fixture_score_changed = upsert_fixture_from_record(record)
-        if fixture_score_changed:
-            score_changes += 1
+        if record.is_finished:
+            _, _, fixture_score_changed = upsert_fixture_from_record(record)
+            if fixture_score_changed:
+                score_changes += 1
 
     if score_changes > 0:
-        from .main import update_scores
-
         update_scores()
 
     return MatchPollCycleResult(

@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash
 # Temporarily modify the app config before importing
 import sys
 import os
+os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src import app, db as flask_db
@@ -16,7 +17,6 @@ from src.models import User, Team, Fixture, Prediction
 def app_fixture():
     """Create and configure a test app instance."""
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['WTF_CSRF_ENABLED'] = False
     
     with app.app_context():
@@ -29,6 +29,7 @@ def app_fixture():
 @pytest.fixture
 def client(app_fixture):
     """Create a test client for the app."""
+    print("DATABASE:", app_fixture.config['SQLALCHEMY_DATABASE_URI'])
     return app_fixture.test_client()
 
 

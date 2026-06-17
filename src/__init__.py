@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 app.config.update(
     SECRET_KEY="AnActualSecretKey",
-    SQLALCHEMY_DATABASE_URI="sqlite:///../db.sqlite",
+    SQLALCHEMY_DATABASE_URI=os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///../db.sqlite"),
     FOOTBALL_DATA_BASE_URL=os.getenv("FOOTBALL_DATA_BASE_URL", "https://api.football-data.org/v4"),
     FOOTBALL_DATA_TOKEN=os.getenv("FOOTBALL_DATA_TOKEN", "3523264a8ffe4cf89782297f6d5504a6"),
     FOOTBALL_DATA_TOKEN_HEADER=os.getenv("FOOTBALL_DATA_TOKEN_HEADER", "X-Auth-Token"),
