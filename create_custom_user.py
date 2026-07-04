@@ -41,6 +41,29 @@ def get_prediction_from_file(
     )
     return None, None
 
+def anti_rosa_predictor(team_1: str, team_2: str) -> tuple[int, int] | tuple[None, None]:
+    # Fetch Rosa (user 2) predictions from database and invert them
+    rosa_user = User.query.filter_by(username="Rosa").first()
+    if rosa_user is None:
+        print("Rosa user not found in database.")
+        return None, None
+    
+    fixture = Fixture.query.filter(
+        (Fixture.home_team.has(name=team_1) & Fixture.away_team.has(name=team_2)) |
+        (Fixture.home_team.has(name=team_2) & Fixture.away_team.has(name=team_1))
+    ).first()
+    if fixture is None:
+        print(f"Fixture not found for teams '{team_1}' vs '{team_2}'")
+        return None, None
+
+    rosa_prediction = Prediction.query.filter_by(user_id=rosa_user.id, fixture_id=fixture.id).first()
+    if rosa_prediction is None:
+        print(f"No prediction found for Rosa in fixture '{team_1}' vs '{team_2}'")
+        return None, None
+
+    # Invert Rosa's prediction
+    return rosa_prediction.score2, rosa_prediction.score1
+
 def random_match_score(home_team: str, away_team: str, rng=None) -> tuple[int, int] | tuple[None, None]:
     if rng is None:
         rng = np.random.default_rng()
@@ -109,9 +132,9 @@ def create_custom_user(
 
 
 if __name__ == "__main__":
-    username = "ChatGPT"
+    username = "Anti-Rosa"
     password = "password"
-    score_predictor = get_prediction_from_file
+    score_predictor = anti_rosa_predictor
     create_custom_user(
         username=username, 
         password=password,

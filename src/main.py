@@ -150,19 +150,27 @@ def add_prediction():
         abort(404)
     if fixture.has_started or fixture.home_team_id is None or fixture.away_team_id is None:
         abort(400)
-    existing_prediction = db.session.query(Prediction).filter_by(user_id=user.id, fixture_id=fixture_id).first()
-    if existing_prediction is not None:
-        print(f"Updating prediction {existing_prediction} with data {request.form}")
-        existing_prediction.score1 = score1
-        existing_prediction.score2 = score2
-        db.session.commit()
-    else:
-        new_prediction = Prediction(user_id=user.id, fixture_id=fixture_id, score1=score1, score2=score2)
-        db.session.add(new_prediction)
-        db.session.commit()
-        print(f"Adding prediction: {new_prediction}")
+
+    _add_prediction(user.id, fixture_id, score1, score2)
+    if user.id == 2:
+        # Anti-Rosa user logic
+        _add_prediction(3, fixture_id, score2, score1)
+
     # Redirect back to the user's predictions page and anchor to the edited fixture
     return redirect(url_for("main.my_predictions") + f"#fixture-{fixture_id}")
+
+def _add_prediction(user_id: int, fixture_id: int, score1: int, score2: int) -> None:
+    existing_prediction = db.session.query(Prediction).filter_by(user_id=user_id, fixture_id=fixture_id).first()
+    if existing_prediction is not None:
+        print(f"Updating prediction {existing_prediction} with data {score1}, {score2}")
+        existing_prediction.score1 = score1
+        existing_prediction.score2 = score2
+    else:
+        new_prediction = Prediction(user_id=user_id, fixture_id=fixture_id, score1=score1, score2=score2)
+        db.session.add(new_prediction)
+        print(f"Adding prediction: {new_prediction}")
+        
+    db.session.commit()
 
 @main.route("/account")
 @login_required
