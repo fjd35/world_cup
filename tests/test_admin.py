@@ -207,6 +207,81 @@ class TestDeleteUser:
         assert response.status_code == 404
 
 
+        class TestUpdateUserId:
+            """Test update_user_id route."""
+
+            def test_update_user_id_not_admin(self, client, regular_user):
+                """Test changing a user id as a non-admin."""
+                client.post('/login', data={
+                    'username': 'testuser',
+                    'password': 'password456'
+                })
+
+                response = client.post('/admin/update_user_id', data={
+                    'current_user_id': regular_user.id,
+                    'new_user_id': 5,
+                })
+
+                assert response.status_code == 403
+
+            def test_update_user_id_valid(self, client, db, admin_user, regular_user, predictions):
+                """Test updating a user's id also rewrites their predictions."""
+                old_user_id = regular_user.id
+                new_user_id = 5
+
+                client.post('/login', data={
+                    'username': 'admin',
+                    'password': 'password123'
+                })
+
+                response = client.post('/admin/update_user_id', data={
+                    'current_user_id': old_user_id,
+                    'new_user_id': new_user_id,
+                }, follow_redirects=True)
+
+                assert response.status_code == 200
+                assert b'updated user testuser from id 2 to 5' in response.data.lower()
+
+                updated_user = db.session.get(User, new_user_id)
+                assert updated_user is not None
+                assert updated_user.username == 'testuser'
+                assert db.session.get(User, old_user_id) is None
+
+                updated_predictions = db.session.query(Prediction).filter_by(user_id=new_user_id).all()
+                assert len(updated_predictions) == 2
+                assert db.session.query(Prediction).filter_by(user_id=old_user_id).count() == 0
+
+            def test_update_user_id_rejects_duplicate(self, client, db, admin_user, regular_user):
+                """Test that a user id cannot be changed to an existing id."""
+                client.post('/login', data={
+                    'username': 'admin',
+                    'password': 'password123'
+                })
+
+                response = client.post('/admin/update_user_id', data={
+                    'current_user_id': regular_user.id,
+                    'new_user_id': admin_user.id,
+                }, follow_redirects=True)
+
+                assert response.status_code == 200
+                assert b'already in use' in response.data.lower()
+
+            def test_update_user_id_admin_protected(self, client, admin_user):
+                """Test that the admin id itself cannot be changed."""
+                client.post('/login', data={
+                    'username': 'admin',
+                    'password': 'password123'
+                })
+
+                response = client.post('/admin/update_user_id', data={
+                    'current_user_id': admin_user.id,
+                    'new_user_id': 3,
+                }, follow_redirects=True)
+
+                assert response.status_code == 200
+                assert b'cannot change the admin user' in response.data.lower()
+
+
 class TestIndex:
     """Test index route."""
     

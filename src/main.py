@@ -7,6 +7,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import selectinload
+from sqlalchemy import text
 
 from . import db
 from .api_football import FootballDataError, sync_world_cup_fixtures
@@ -299,6 +300,54 @@ def delete_user():
     db.session.delete(target_user)
     db.session.commit()
     flash(f"Deleted user {target_user.username} and all their predictions.")
+    return redirect(url_for("main.admin"))
+
+
+@main.route("/admin/update_user_id", methods=["POST"])
+@login_required
+def update_user_id():
+    user = _current_user()
+    if user.id != 1:
+        abort(403)
+
+    try:
+        current_user_id = int(request.form["current_user_id"])
+        new_user_id = int(request.form["new_user_id"])
+    except (KeyError, ValueError):
+        flash("User ID and new ID must be valid numbers.")
+        return redirect(url_for("main.admin"))
+
+    if current_user_id == 1:
+        flash("Cannot change the admin user's ID.")
+        return redirect(url_for("main.admin"))
+
+    if new_user_id == 1:
+        flash("ID 1 is reserved for the admin user.")
+        return redirect(url_for("main.admin"))
+
+    if current_user_id == new_user_id:
+        flash("The new ID must be different from the current ID.")
+        return redirect(url_for("main.admin"))
+
+    target_user = db.session.get(User, current_user_id)
+    if target_user is None:
+        abort(404)
+    target_username = target_user.username
+
+    if db.session.get(User, new_user_id) is not None:
+        flash(f"User ID {new_user_id} is already in use.")
+        return redirect(url_for("main.admin"))
+
+    db.session.execute(
+        text("UPDATE prediction SET user_id = :new_user_id WHERE user_id = :current_user_id"),
+        {"new_user_id": new_user_id, "current_user_id": current_user_id},
+    )
+    db.session.execute(
+        text("UPDATE user SET id = :new_user_id WHERE id = :current_user_id"),
+        {"new_user_id": new_user_id, "current_user_id": current_user_id},
+    )
+    db.session.commit()
+    flash(f"Updated user {target_username} from ID {current_user_id} to {new_user_id}.")
     return redirect(url_for("main.admin"))
 
 

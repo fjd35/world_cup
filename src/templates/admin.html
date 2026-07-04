@@ -45,10 +45,18 @@
         <td>{{ user.score }}</td>
         <td>
             {% if user.id != 1 %}
-            <form action="{{ url_for('main.delete_user') }}" method="POST" onsubmit="return confirm('Delete user {{ user.username }} and all their predictions? This cannot be undone.');">
-                <input type="hidden" name="user_id" value="{{ user.id }}">
-                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
+            <div class="d-flex flex-wrap align-items-center" style="gap: 0.5rem;">
+                <form action="{{ url_for('main.update_user_id') }}" method="POST" class="d-flex align-items-center" style="gap: 0.5rem;">
+                    <input type="hidden" name="current_user_id" value="{{ user.id }}">
+                    <label class="sr-only" for="new_user_id_{{ user.id }}">New ID for {{ user.username }}</label>
+                    <input id="new_user_id_{{ user.id }}" class="form-control form-control-sm" name="new_user_id" type="number" min="2" value="{{ user.id }}" style="width: 100px;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Update ID</button>
+                </form>
+                <form action="{{ url_for('main.delete_user') }}" method="POST" onsubmit="return confirm('Delete user {{ user.username }} and all their predictions? This cannot be undone.');">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </div>
             {% else %}
             <span class="text-muted">Admin protected</span>
             {% endif %}
