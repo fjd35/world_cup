@@ -165,12 +165,13 @@ def _add_prediction(user_id: int, fixture_id: int, score1: int, score2: int) -> 
         print(f"Updating prediction {existing_prediction} with data {score1}, {score2}")
         existing_prediction.score1 = score1
         existing_prediction.score2 = score2
+        db.session.commit()
     else:
         new_prediction = Prediction(user_id=user_id, fixture_id=fixture_id, score1=score1, score2=score2)
         db.session.add(new_prediction)
+        db.session.commit()
         print(f"Adding prediction: {new_prediction}")
-        
-    db.session.commit()
+
 
 @main.route("/account")
 @login_required
