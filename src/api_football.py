@@ -150,6 +150,7 @@ def _parse_fixture(match: dict[str, Any]) -> FootballDataFixtureRecord:
     score = match.get("score", {})
     home_team = match.get("homeTeam", {})
     away_team = match.get("awayTeam", {})
+    home_score, away_score = _parse_score(score)
     return FootballDataFixtureRecord(
         api_fixture_id=_int_or_none(match.get("id")) or 0,
         api_league_id=_int_or_none(competition.get("id")),
@@ -159,9 +160,22 @@ def _parse_fixture(match: dict[str, Any]) -> FootballDataFixtureRecord:
         is_finished=_string_or_none(match.get("status")) == "FINISHED",
         home_team=_parse_team(home_team),
         away_team=_parse_team(away_team),
-        home_score=_int_or_none((score.get("fullTime") or {}).get("home")),
-        away_score=_int_or_none((score.get("fullTime") or {}).get("away")),
+        home_score=home_score,
+        away_score=away_score,
     )
+
+def _parse_score(score: dict[str, Any]) -> tuple[int | None, int | None]:
+    if not isinstance(score, dict):
+        return None, None
+    if score["duration"] == "REGULAR":
+        score_dict = score.get("fullTime", {})
+    else:
+        regular_time = score.get("regularTime", {})
+        extra_time = score.get("extraTime", {})
+        score_dict = {k: regular_time[k] + extra_time[k] for k in regular_time.keys()}
+    home_score = _int_or_none(score_dict.get("home"))
+    away_score = _int_or_none(score_dict.get("away"))
+    return home_score, away_score
 
 def _parse_team(team: dict[str, Any]) -> FootballDataTeamRecord:
     return FootballDataTeamRecord(

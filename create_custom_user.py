@@ -16,7 +16,7 @@ ScorePredictorCallable = Callable[[str, str], tuple[int, int] | tuple[None, None
 def get_prediction_from_file(
         team_1: str, 
         team_2: str, 
-        filename: str = "chatgpt_predictions.json"
+        filename: str = "last_32_16_predictions.json"
     ) -> tuple[int, int] | tuple[None, None]:
     if not team_1 or not team_2:
         return None, None
@@ -36,9 +36,10 @@ def get_prediction_from_file(
         if home == team_2 and away == team_1:
             return away_goals, home_goals
 
-    raise ValueError(
+    print(
         f"No prediction found for fixture '{team_1}' vs '{team_2}'"
     )
+    return None, None
 
 def random_match_score(home_team: str, away_team: str, rng=None) -> tuple[int, int] | tuple[None, None]:
     if rng is None:
